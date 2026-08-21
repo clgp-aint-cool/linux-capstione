@@ -1,84 +1,90 @@
-(1) hạ tầng & mạng -- Phu
+# Đồ Án Capstone Linux - Hệ Thống Mini Vault
 
-(2) reverse proxy & bảo mật web -- Phuc
+Hệ thống được thiết kế và vận hành theo mô hình phân vùng mạng an toàn sử dụng cơ chế Jump Host (Bastion) và các cơ chế gia cố bảo mật hệ điều hành Linux.
 
-(3) ứng dụng & systemd -- Duy
+## 1. Hướng đồ án đã chọn
+- **Tên dự án:** Mini Vault
+- **Công nghệ cốt lõi:**
+  - Web Server & Reverse Proxy: Nginx
+  - Application Backend: FastAPI (Python) chạy dưới dạng dịch vụ systemd
+  - Cơ sở dữ liệu: MySQL chỉ nghe tại `localhost`
+  - Hệ điều hành: Ubuntu 22.04.5 LTS Server sạch
+  - Nền tảng ảo hóa: Proxmox Virtual Environment (PVE)
 
-(4)CSDL & sao lưu -- Khanh
+## 2. Sơ đồ VM và Phân bổ Mạng
+Hạ tầng mạng ảo hóa được chia làm hai phân vùng riêng biệt:
+1. **Mạng ngoài (External/WAN) - Bridge `vmbr0`**: Cung cấp IP mạng ngoài cho Jump Host để quản trị viên có thể kết nối SSH từ máy Client cá nhân.
+2. **Mạng LAN nội bộ (Private LAN) - Bridge `vmbrcs`**: Cô lập hoàn toàn, dải IP nội bộ `10.10.10.0/24` (Gateway ảo trên Host PVE: `10.10.10.1`).
 
-(5) bộ công cụ tự động hóa & cảnh báo -- Long
+### Bảng Phân Bổ IP Hệ Thống:
+| Tên VM | Hostname | IP WAN / Host Network | IP Private LAN | Cổng Dịch Vụ Mở | Vai Trò |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **VM 200** | `jump-host` | Nhận từ `vmbr0` | `10.10.10.200` | 22 (SSH) | Jump Host (Bastion) trung chuyển |
+| **VM 203** | `vm1-svc` | Không có (Isolated) | `10.10.10.11` | 22 (SSH nội bộ), 80/443 (HTTP/HTTPS) | Dịch vụ chính (Web, App, DB) |
+| **VM 202** | `vm2-backup` | Không có (Isolated) | `10.10.10.12` | 22 (SSH nội bộ) | Sao lưu lưu trữ chuyên dụng |
 
-## Checklist Yêu cầu
+### Sơ đồ kết nối:
+Mô tả sơ đồ liên kết được biểu diễn qua ảnh sơ đồ tại tệp `images/so_do.png`.
 
-### Hệ thống & lưu trữ
+## 3. Bảng phân công thành viên
+| STT | Họ và tên | Vai trò phân công thực tế | Mức đóng góp |
+| :--- | :--- | :--- | :--- |
+| 1 | Cao Lê Gia Phú | Hạ tầng và mạng | 100% |
+| 2 | Nguyễn Văn Bảo Phúc | Reverse proxy và bảo mật web | 100% |
+| 3 | Nguyễn Lê Nhật Duy | Ứng dụng và systemd | 100% |
+| 4 | Lê Nguyễn Nhật Khánh | CSDL và sao lưu | 100% |
+| 5 | Lê Hoàng Long | Bộ công cụ tự động hóa và cảnh báo | 100% |
 
-| ✓   | Yêu cầu                                                                 | Áp dụng | Tiêu chí |
-| --- | ----------------------------------------------------------------------- | ------- | -------- |
-| [ ] | Cài Ubuntu 22.04 hoặc CentOS Stream 9 bản sạch; đặt hostname có ý nghĩa | Tất cả  | Hệ thống |
-| [ ] | Dùng tài khoản quản trị non-root (sudo) cho công việc hằng ngày         | Tất cả  | Bảo mật  |
-| [ ] | Vùng dữ liệu/sao lưu riêng mount qua `/etc/fstab`, tồn tại sau reboot   | Tất cả  | Hệ thống |
-| [ ] | Kiến trúc từ 2 VM trở lên (bắt buộc với nhóm 5 người)                   | Tất cả  | Hệ thống |
+## 4. Cách tái tạo hệ thống
+### Bước 1: Thiết lập mạng và Máy ảo trên Proxmox
+1. Trên Proxmox VE, tạo một Linux Bridge ảo đặt tên là `vmbrcs` (không gán cổng mạng vật lý), gán địa chỉ IP Gateway: `10.10.10.1/24`.
+2. Tạo 3 VM chạy hệ điều hành Ubuntu Server 22.04 LTS:
+   - `jump-host` (200): Gán card `net0` vào `vmbr0` (WAN), card `net1` vào `vmbrcs` (IP tĩnh: `10.10.10.200`).
+   - `vm1-svc` (203): Gán card `net0` vào `vmbrcs` (IP tĩnh: `10.10.10.11`). Thêm đĩa cứng thứ hai `scsi1` (10 GB).
+   - `vm2-backup` (202): Gán card `net0` vào `vmbrcs` (IP tĩnh: `10.10.10.12`). Thêm đĩa cứng thứ hai `scsi1` (20 GB).
 
-### Gia cố bảo mật
+### Bước 2: Thiết lập lưu trữ và mount ổ đĩa
+Định dạng ổ đĩa thứ hai `ext4` và mount tự động tại `/etc/fstab`:
+- Trên `vm1-svc`: Mount ổ cứng `scsi1` vào `/mnt/data`.
+- Trên `vm2-backup`: Mount ổ cứng `scsi1` vào `/mnt/backup`.
 
-| ✓   | Yêu cầu                                                                 | Áp dụng | Tiêu chí |
-| --- | ----------------------------------------------------------------------- | ------- | -------- |
-| [ ] | Tường lửa (UFW hoặc firewalld) mặc định chặn vào; chỉ mở cổng cần thiết | Tất cả  | Bảo mật  |
-| [ ] | Gia cố SSH: tắt root, xác thực khóa, đổi cổng hoặc AllowUsers           | Tất cả  | Bảo mật  |
-| [ ] | fail2ban bảo vệ SSH; ban được kích hoạt trực tiếp                       | Tất cả  | Bảo mật  |
-| [ ] | auditd theo dõi `/etc/passwd` và `/etc/shadow`; dấu vết đọc được        | Tất cả  | Bảo mật  |
-| [ ] | Ghi lại lần chạy Lynis; nêu điểm; khắc phục 3 mục                       | Tất cả  | Bảo mật  |
+### Bước 3: Cấu hình SSH ProxyJump
+1. Sinh cặp khóa SSH trên máy Client quản trị:
+   ```bash
+   ssh-keygen -t ed25519 -C "sysadmin@capstone"
+   ```
+2. Thêm Public Key vào `/home/sysadmin/.ssh/authorized_keys` và `/home/devops/.ssh/authorized_keys` của cả 3 VM.
+3. Cấu hình file `~/.ssh/config` trên máy cá nhân để thực hiện ProxyJump qua `jump-host` vào `vm1-svc` và `vm2-backup`.
 
-### Sao lưu & khôi phục
+### Bước 4: Triển khai Nginx Virtual Hosts
+1. Cài đặt Nginx trên `vm1-svc`:
+   ```bash
+   sudo apt install -y nginx
+   ```
+2. Cấu hình 2 Virtual Host trong `/etc/nginx/sites-available/`:
+   - `app.conf`: Proxy tới `http://127.0.0.1:8000` (FastAPI) phục vụ domain `app.lab.local`.
+   - `status.conf`: Phục vụ trang trạng thái tĩnh tại thư mục `/var/www/status` cho domain `status.lab.local`.
+3. Kích hoạt bằng cách tạo symbolic link vào `/etc/nginx/sites-enabled/` và reload Nginx.
 
-| ✓   | Yêu cầu                                                         | Áp dụng | Tiêu chí |
-| --- | --------------------------------------------------------------- | ------- | -------- |
-| [ ] | Sao lưu tự động: nén, gắn nhãn thời gian, có chính sách lưu giữ | Tất cả  | Sao lưu  |
-| [ ] | Lập lịch sao lưu bằng cron hoặc systemd timer; ghi lại lịch     | Tất cả  | Sao lưu  |
-| [ ] | Đã luyện quy trình khôi phục; phục hồi dữ liệu thật trực tiếp   | Tất cả  | Sao lưu  |
+### Bước 5: Thiết lập Dịch vụ Systemd và CSDL
+1. Tạo một systemd service file `/etc/systemd/system/myapp.service` chạy ứng dụng FastAPI bằng user không đặc quyền `myapp`.
+2. Tạo file biến môi trường `/etc/myapp/myapp.env` (chmod 640) lưu trữ mật khẩu MySQL.
+3. Cấu hình MySQL chỉ nghe trên `127.0.0.1` (sửa `bind-address` trong file cấu hình).
+4. Tạo CSDL `app_db` và gán quyền tối thiểu (SELECT, INSERT, UPDATE, DELETE) cho tài khoản `app_user` kết nối cục bộ.
 
-### Tự động hóa
+### Bước 6: Hardening Hệ Thống
+1. Bật tường lửa UFW và chạy tập lệnh `/root/ufw_setup.sh` chỉ cho phép cổng 22, 80, 443.
+2. Gia cố SSH trong `/etc/ssh/sshd_config` (vô hiệu hóa root login và password login).
+3. Sửa lỗi `cloud-init` ghi đè SSH key bằng cách xóa `/etc/ssh/sshd_config.d/50-cloud-init.conf` và đặt cấu hình `ssh_pwauth: false` tại `/etc/cloud/cloud.cfg.d/99-disable-ssh-pwauth.cfg`.
+4. Cài đặt và kích hoạt `fail2ban` bảo vệ SSH.
+5. Cài đặt và cấu hình `auditd` theo dõi `/etc/passwd` và `/etc/shadow`.
 
-| ✓   | Yêu cầu                                                                 | Áp dụng | Tiêu chí    |
-| --- | ----------------------------------------------------------------------- | ------- | ----------- |
-| [ ] | Script health-check kiểm tra trạng thái thật và phản ứng (log/cảnh báo) | Tất cả  | Tự động hóa |
-| [ ] | Script dùng `set -euo pipefail` và `trap` trên ERR/EXIT                 | Tất cả  | Tự động hóa |
-| [ ] | Mọi script qua shellcheck (sạch, hoặc nêu cảnh báo có lý do)            | Tất cả  | Tự động hóa |
-| [ ] | Kênh cảnh báo (mail / msmtp / Telegram) hoạt động khi mô phỏng lỗi      | Tất cả  | Tự động hóa |
-
-### Thành phần 1 — Hạ tầng, Web & Bảo mật (bắt buộc)
-
-| ✓   | Yêu cầu                                                                         | Áp dụng | Tiêu chí |
-| --- | ------------------------------------------------------------------------------- | ------- | -------- |
-| [ ] | Web server (Nginx/Apache) reverse proxy trước ứng dụng, chuyển tiếp header đúng | Tất cả  | Hệ thống |
-| [ ] | ≥2 virtual host trên cùng web server (site app + ít nhất một site nữa)          | Tất cả  | Hệ thống |
-| [ ] | Kiến trúc ≥2 VM, có sơ đồ kết nối trong báo cáo                                 | Tất cả  | Hệ thống |
-
-### Thành phần 2 — Ứng dụng & CSDL (bắt buộc)
-
-| ✓   | Yêu cầu                                                                         | Áp dụng | Tiêu chí |
-| --- | ------------------------------------------------------------------------------- | ------- | -------- |
-| [ ] | Ứng dụng (Flask/FastAPI/Node) có ít nhất một endpoint đọc và một ghi            | Tất cả  | Hệ thống |
-| [ ] | CSDL (PostgreSQL hoặc MySQL): role đặc quyền tối thiểu; chỉ nghe localhost (ss) | Tất cả  | Bảo mật  |
-| [ ] | App chạy như dịch vụ systemd: Restart=on-failure, EnvironmentFile, journald     | Tất cả  | Hệ thống |
-| [ ] | Bí mật trong EnvironmentFile với quyền hạn chế (không hard-code)                | Tất cả  | Bảo mật  |
-| [ ] | Kill tiến trình app → systemd tự khởi động lại (thấy trong journalctl)          | Tất cả  | Hệ thống |
-
-### Thành phần 3 — Vận hành & Tự động hóa (bắt buộc)
-
-| ✓   | Yêu cầu                                                                       | Áp dụng | Tiêu chí    |
-| --- | ----------------------------------------------------------------------------- | ------- | ----------- |
-| [ ] | Menu CLI tương tác điều phối tới từng công cụ; xử lý nhập sai                 | Tất cả  | Tự động hóa |
-| [ ] | Deploy có test → reload → xác nhận an toàn và rollback khi lỗi                | Tất cả  | Tự động hóa |
-| [ ] | Backup: dump CSDL + web, nén, gắn nhãn, lưu giữ, rsync sang VM thứ hai        | Tất cả  | Sao lưu     |
-| [ ] | Restore từ bản sao lưu do bộ công cụ tạo, phục hồi dữ liệu thật               | Tất cả  | Sao lưu     |
-| [ ] | Health-check: CPU/disk/RAM/cổng/dịch vụ so ngưỡng, có cảnh báo                | Tất cả  | Tự động hóa |
-| [ ] | Xoay vòng log: xoay, nén, giữ N, xóa cũ hơn                                   | Tất cả  | Tự động hóa |
-| [ ] | Mỗi công cụ: getopts khi hợp lý, `--help`, ghi log rõ; toàn bộ qua shellcheck | Tất cả  | Tự động hóa |
-
-### Điểm thưởng — tùy chọn (+1 điểm)
-
-| ✓   | Yêu cầu                                                                | Áp dụng | Tiêu chí |
-| --- | ---------------------------------------------------------------------- | ------- | -------- |
-| [ ] | TLS tự ký phục vụ site/app; chuyển hướng HTTP→HTTPS; mở 443            | Tất cả  | Thưởng   |
-| [ ] | Báo cáo giải thích vì sao không dùng được Let's Encrypt trên VM cô lập | Tất cả  | Thưởng   |
+### Bước 7: Cài đặt Chứng chỉ TLS tự ký (HTTPS)
+1. Sinh chứng chỉ tự ký:
+   ```bash
+   sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+     -keyout /etc/ssl/private/lab-selfsigned.key \
+     -out    /etc/ssl/certs/lab-selfsigned.crt \
+     -subj "/C=VN/ST=HCMC/O=HCMUS-Lab/CN=app.lab.local"
+   ```
+2. Cấu hình Nginx chuyển hướng cổng 80 sang cổng 443, và cấu hình lắng nghe SSL ở cổng 443 với tệp chứng chỉ tự ký vừa tạo.

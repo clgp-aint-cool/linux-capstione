@@ -1,0 +1,46 @@
+\contentsline {section}{\numberline {1}Tổng quan hệ thống}{4}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Hướng đồ án đã chọn}{4}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Sơ đồ mạng và các máy ảo (VM)}{4}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Cấu hình lưu trữ phần cứng}{6}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Giải pháp truy cập quản trị từ xa (SSH ProxyJump)}{6}{subsection.1.4}%
+\contentsline {section}{\numberline {2}Các bước xây dựng hệ thống}{7}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Cài đặt các gói phần mềm cần thiết}{7}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Khởi tạo tài khoản quản trị viên}{7}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Cấu hình Nginx Virtual Hosts}{7}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Virtual Host 1: Reverse Proxy trỏ đến Backend Application (\texttt {app.conf})}{7}{subsubsection.2.3.1}%
+\contentsline {subsubsection}{\numberline {2.3.2}Virtual Host 2: Trang trạng thái tĩnh (\texttt {status.conf})}{8}{subsubsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.4}Cấu hình ứng dụng và Cơ sở dữ liệu}{8}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}Cấu hình dịch vụ systemd cho Backend (\texttt {myapp.service})}{8}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}Cấu hình Cơ sở dữ liệu MySQL}{9}{subsubsection.2.4.2}%
+\contentsline {subsubsection}{\numberline {2.4.3}Mã nguồn ứng dụng Backend}{9}{subsubsection.2.4.3}%
+\contentsline {section}{\numberline {3}Gia cố bảo mật}{10}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Cấu hình tường lửa UFW}{10}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Gia cố dịch vụ SSH}{10}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Khắc phục lỗi ghi đè của cloud-init}{10}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Brute-force Protection (fail2ban)}{11}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Giám sát hệ thống (auditd)}{11}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Đánh giá an toàn hệ thống (Lynis)}{11}{subsection.3.6}%
+\contentsline {section}{\numberline {4}Sao lưu \& Khôi phục}{13}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Chiến lược sao lưu tự động}{13}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Cấu hình lập lịch sao lưu và quy trình khôi phục}{13}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Cấu hình các tệp chứa biến môi trường}{13}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Các tập lệnh sao lưu và khôi phục CSDL}{14}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Các tập lệnh sao lưu và khôi phục toàn diện đa tầng}{15}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}Cấu hình lập lịch tự động hóa bằng Cron}{18}{subsubsection.4.2.4}%
+\contentsline {subsubsection}{\numberline {4.2.5}Diễn tập thực tế khôi phục thảm họa CSDL}{19}{subsubsection.4.2.5}%
+\contentsline {section}{\numberline {5}Tự động hóa}{20}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Script cấu hình tường lửa UFW (\texttt {ufw\_setup.sh})}{20}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Script mô phỏng dò mật khẩu SSH (\texttt {simulate\_ssh\_bruteforce.sh})}{20}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Các script tự động hóa khác trong hệ thống}{20}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Thư viện gửi cảnh báo Telegram (\texttt {lib/alert.sh})}{21}{subsubsection.5.3.1}%
+\contentsline {subsubsection}{\numberline {5.3.2}Script giám sát sức khỏe hệ thống và dịch vụ (\texttt {healthcheck.sh})}{21}{subsubsection.5.3.2}%
+\contentsline {subsubsection}{\numberline {5.3.3}Script triển khai an toàn có tự động Rollback (\texttt {deploy.sh})}{23}{subsubsection.5.3.3}%
+\contentsline {subsubsection}{\numberline {5.3.4}Script xoay vòng và nén nhật ký (\texttt {logrotate.sh})}{25}{subsubsection.5.3.4}%
+\contentsline {subsubsection}{\numberline {5.3.5}Menu CLI điều phối tương tác hệ thống (\texttt {main.sh})}{26}{subsubsection.5.3.5}%
+\contentsline {subsubsection}{\numberline {5.3.6}Kịch bản kiểm thử các tính năng tự động hóa}{27}{subsubsection.5.3.6}%
+\contentsline {section}{\numberline {6}Điểm thưởng TLS / HTTPS}{29}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Lập luận khoa học về chứng chỉ tự ký trên môi trường Lab}{29}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Các bước tạo chứng chỉ tự ký và cấu hình Nginx}{29}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Nhìn lại}{31}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Bài học từ sự cố cloud-init}{31}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Kế hoạch cải tiến và Bài học khác}{31}{subsection.7.2}%
